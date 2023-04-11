@@ -1,0 +1,41 @@
+package com.example.reactiveyamlgen.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.*;
+
+import java.util.List;
+import java.util.Objects;
+
+@ToString
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class RouteDto {
+    private Long id;
+    private String uri;
+    private Long domainId;
+    private String routeId;
+    private String metadata;
+
+    private List<FilterAndPredicateDto> predicates;
+    private List<FilterAndPredicateDto> filters;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (!(obj instanceof RouteDto)) return false;
+        RouteDto other = (RouteDto) obj;
+        return Objects.equals(routeId, other.routeId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(routeId);
+    }
+}

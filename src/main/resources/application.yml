@@ -1,0 +1,39 @@
+server:
+  port: 1122
+spring:
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: service-a
+      enabled: false
+  application:
+    name: service-a
+  r2dbc:
+    url: r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+    web:
+      servlet:
+        context-path: /h2-console
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+      springframework:
+        r2dbc: DEBUG
+debug: true
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh

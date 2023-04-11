@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: 1
+        uri: test
+        filters:
+        - name: filters1
+          args:
+            key: message
+        predicate:
+        - name: predicates1
+          args:
+            key: message
