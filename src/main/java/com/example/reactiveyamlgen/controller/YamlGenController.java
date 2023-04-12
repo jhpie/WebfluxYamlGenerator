@@ -10,13 +10,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
-import java.util.List;
+import javax.validation.Valid;
 
 
 @RestController
@@ -28,9 +32,14 @@ public class YamlGenController {
         this.yamlGenService = yamlGenService;
     }
 
+//    @PostMapping(value = "/create")
+//    private Flux<Void> create(@RequestBody @Valid List<RouteDto> routeDtos) {
+//        return yamlGenService.saveYaml(routeDtos);
+//    }
+    //TEST
     @PostMapping(value = "/create")
-    private Flux<Void> create(@RequestBody List<RouteDto> routeDtos) {
-        return yamlGenService.saveYaml(routeDtos);
+    private ResponseEntity<String> create(@RequestBody @Valid RouteDto routeDto) {
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/write")
@@ -46,10 +55,8 @@ public class YamlGenController {
     @PostMapping(value = "/refresh")
     public void refresh() {
         RestTemplate restTemplate = new RestTemplate();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
         HttpEntity<String> requestEntity = new HttpEntity<String>("", headers);
 
         String url = "http://localhost:8888/config/refresh";

@@ -3,6 +3,7 @@ package com.example.reactiveyamlgen.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.data.relational.core.mapping.Column;
 
@@ -19,9 +20,13 @@ import java.util.Objects;
 @JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FilterAndPredicateDto{
     private Long id;
+    @NotBlank(message="routeId 는 필수값 입니다.")
     private String routeId;
+    @NotBlank(message="name 는 필수값 입니다.")
     private String name;
+    @NotBlank(message="isName 는 필수값 입니다.")
     private Boolean isName;
+    @NotBlank(message="isFilter 는 필수값 입니다.")
     private Boolean isFilter;
     private List<ArgsDto> args;
 

@@ -58,13 +58,13 @@ public class YamlGenServiceImpl implements YamlGenService {
                                         Route route = new Route(dto);
                                         List<FilterAndPredicate> filterList = dto.getFilters().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
                                         List<FilterAndPredicate> predicateList = dto.getPredicates().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
-                                        List<Args> argsList1 = dto.getFilters().stream()
+                                        List<Args> filterArgsList = dto.getFilters().stream()
                                                 .flatMap(filterDto -> filterDto.getArgs().stream().map(Args::new))
                                                 .collect(Collectors.toList());
-                                        List<Args> argsList2 = dto.getPredicates().stream()
+                                        List<Args> predicateArgsList = dto.getPredicates().stream()
                                                 .flatMap(filterDto -> filterDto.getArgs().stream().map(Args::new))
                                                 .collect(Collectors.toList());
-                                        List<Args> argsList = Stream.concat(argsList1.stream(), argsList2.stream())
+                                        List<Args> argsList = Stream.concat(filterArgsList.stream(), predicateArgsList.stream())
                                                 .collect(Collectors.toList());
                                         List<FilterAndPredicate> filterAndPredicateList = Stream.concat(filterList.stream(), predicateList.stream())
                                                 .collect(Collectors.toList());
@@ -116,7 +116,6 @@ public class YamlGenServiceImpl implements YamlGenService {
                                 // Write matching FilterAndPredicateDto content
                                 if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
                                     filterBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
-
                                 }else{
                                     filterBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
                                 }
@@ -131,12 +130,10 @@ public class YamlGenServiceImpl implements YamlGenService {
                                 // Write PredicateDto content
                                 if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
                                     predicateBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
-
                                 }else{
                                     predicateBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
                                 }
                                 predicateBuilder.append("          args:\n");
-
                                 for (ArgsDto argsDto : argsDtos) {
                                     if (argsDto.getParentName().equals(filterAndPredicateDto.getName()) && argsDto.getRouteId().equals(filterAndPredicateDto.getRouteId())) {
                                         // Write ArgsDto content
@@ -158,7 +155,6 @@ public class YamlGenServiceImpl implements YamlGenService {
                 predicateBuilder.delete(0, filterBuilder.length());
             }
             writer.flush();
-
         } catch(IOException e) {
             e.printStackTrace();
         }
