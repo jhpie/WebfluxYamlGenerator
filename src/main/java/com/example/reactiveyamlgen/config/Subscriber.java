@@ -6,7 +6,9 @@ import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
-import org.reactivestreams.Publisher;
+import com.example.reactiveyamlgen.service.impl.YamlGenServiceImpl;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.util.function.Tuple3;
@@ -22,6 +24,7 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
     private final List<FilterAndPredicateDto> filterAndPredicateDtos = new ArrayList<>();
     private final List<ArgsDto> argsDtos = new ArrayList<>();
     private final AtomicInteger remaining = new AtomicInteger(0);
+    private static final Logger logger = LogManager.getLogger(Subscriber.class);
 
     public List<RouteDto> getRouteDtos() {
         return routeDtos.stream()
@@ -43,14 +46,14 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
 
     @Override
     protected void hookOnSubscribe(Subscription subscription) {
-        System.out.println("Subscribed");
+        logger.info(subscription.getClass().getName()+" Subscribed");
         remaining.incrementAndGet();
         request(Long.MAX_VALUE);
     }
 
     @Override
     protected void hookOnNext(Tuple3<Route, FilterAndPredicate, Args> tuple) {
-        System.out.println("hookOnNext!!!!!!!!");
+        logger.info("hookOnNext Called : "+ remaining);
         Route route = tuple.getT1();
         FilterAndPredicate filterAndPredicate = tuple.getT2();
         Args args = tuple.getT3();
@@ -76,11 +79,10 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
 
     }
 
-    public Publisher<Void> clearDtos() {
+    public void clearDtos() {
         routeDtos.clear();
         filterAndPredicateDtos.clear();
         argsDtos.clear();
-        return null;
     }
 
 

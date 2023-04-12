@@ -21,6 +21,7 @@ public class FilterAndPredicateDto{
     private Long id;
     private String routeId;
     private String name;
+    private Boolean isName;
     private Boolean isFilter;
     private List<ArgsDto> args;
 

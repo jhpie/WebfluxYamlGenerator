@@ -37,3 +37,6 @@ management:
     web:
       exposure:
         include: refresh
+
+target:
+  directory: C:\\IdeaProjects\\reactive-yaml-gen\\src\\main\\resources\\

@@ -28,12 +28,12 @@ public class YamlGenController {
         this.yamlGenService = yamlGenService;
     }
 
-    @PostMapping("/create")
+    @PostMapping(value = "/create")
     private Flux<Void> create(@RequestBody List<RouteDto> routeDtos) {
         return yamlGenService.saveYaml(routeDtos);
     }
 
-    @PostMapping("/write")
+    @PostMapping(value = "/write")
     public Mono<Void> write() {
         Flux<Tuple3<Route, FilterAndPredicate, Args>> routeFlux = yamlGenService.readYaml();
         Subscriber subscriber = new Subscriber();
@@ -43,7 +43,7 @@ public class YamlGenController {
                 .then(Mono.fromRunnable(subscriber::clearDtos));
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(value = "/refresh")
     public void refresh() {
         RestTemplate restTemplate = new RestTemplate();
 

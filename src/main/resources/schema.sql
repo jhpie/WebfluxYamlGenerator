@@ -10,7 +10,8 @@ CREATE TABLE filterandrpredicate (
                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
                        route_id VARCHAR(256) not null,
                        is_filter BOOLEAN not null,
-                       name VARCHAR(256) not null
+                       is_name BOOLEAN not null,
+                       name VARCHAR(256)
 );
 
 CREATE TABLE args (

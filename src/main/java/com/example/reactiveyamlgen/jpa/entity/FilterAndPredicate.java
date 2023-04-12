@@ -24,6 +24,8 @@ public class FilterAndPredicate{
     private String routeId;
     @Column("name")
     private String name;
+    @Column("is_name")
+    private Boolean isName;
     @Column("is_filter")
     private Boolean isFilter;
     @Transient
@@ -32,6 +34,7 @@ public class FilterAndPredicate{
     public FilterAndPredicate(FilterAndPredicateDto filterAndPredicateDto) {
         this.routeId = filterAndPredicateDto.getRouteId();
         this.name = filterAndPredicateDto.getName();
+        this.isName = filterAndPredicateDto.getIsName();
         this.isFilter = filterAndPredicateDto.getIsFilter();
         this.args = filterAndPredicateDto.getArgs().stream().map(Args::new).collect(Collectors.toList());
     }
@@ -40,6 +43,7 @@ public class FilterAndPredicate{
         dto.setId(this.id);
         dto.setRouteId(this.getRouteId());
         dto.setName(this.getName());
+        dto.setIsName(this.getIsName());
         dto.setIsFilter(this.getIsFilter());
         return dto;
     }

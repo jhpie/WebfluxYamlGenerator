@@ -12,6 +12,9 @@ import com.example.reactiveyamlgen.jpa.repository.RouteRepository;
 import com.example.reactiveyamlgen.service.YamlGenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -34,8 +37,11 @@ public class YamlGenServiceImpl implements YamlGenService {
     private final RouteRepository routeRepository;
     private final FilterAndPredicateRepository filterAndPredicateRepository;
     private final ArgsRepository argsRepository;
+    private static final Logger logger = LogManager.getLogger(YamlGenServiceImpl.class);
 
-    private static final String RESOURCES_PATH = "C:\\IdeaProjects\\reactive-yaml-gen\\src\\main\\resources\\";
+    @Value("${target.directory}")
+    private String TARGET_DIRECTORY_PATH;
+
 
     public Flux<Void> saveYaml(List<RouteDto> routeDtos) {
         Mono<Void> deleteAllMono = Mono.when(routeRepository.deleteAll(),
@@ -80,17 +86,16 @@ public class YamlGenServiceImpl implements YamlGenService {
                         .map(filterAndPredicate -> Tuples.of(route, filterAndPredicate)))
                 .flatMap(routeAndFilter -> argsRepository.findAllByParentName(routeAndFilter.getT2().getName())
                         .map(args -> Tuples.of(routeAndFilter.getT1(), routeAndFilter.getT2(), args)))
-                .doOnNext(item -> System.out.println("Item: " + item.toString()));
+                .doOnNext(item -> logger.info("Item: " + item.toString()));
     }
 
     public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) {
         //파일객체 생성
-        File file = new File(RESOURCES_PATH + "result.yml");
-        FileWriter writer = null;
+        File file = new File(TARGET_DIRECTORY_PATH + "result.yml");
 
         try {
             // Set true to overwrite the contents of the existing file, false to delete the existing contents and overwrite the new ones
-            writer = new FileWriter(file, false);
+            FileWriter writer = new FileWriter(file, false);
             writer.write(
                     "spring:\n" +
                             "  cloud:\n" +
@@ -109,10 +114,13 @@ public class YamlGenServiceImpl implements YamlGenService {
                         .forEach(filterAndPredicateDto -> {
                             if(filterAndPredicateDto.getIsFilter()==Boolean.TRUE) {
                                 // Write matching FilterAndPredicateDto content
-                                filterBuilder.append("        filters:\n");
-                                filterBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
-                                filterBuilder.append("          args:\n");
+                                if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
+                                    filterBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
 
+                                }else{
+                                    filterBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
+                                }
+                                filterBuilder.append("          args:\n");
                                 for (ArgsDto argsDto : argsDtos) {
                                     if (argsDto.getParentName().equals(filterAndPredicateDto.getName()) && argsDto.getRouteId().equals(filterAndPredicateDto.getRouteId())) {
                                         // Write ArgsDto content
@@ -121,8 +129,12 @@ public class YamlGenServiceImpl implements YamlGenService {
                                 }
                             }else{
                                 // Write PredicateDto content
-                                predicateBuilder.append("        predicate:\n");
-                                predicateBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
+                                if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
+                                    predicateBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
+
+                                }else{
+                                    predicateBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
+                                }
                                 predicateBuilder.append("          args:\n");
 
                                 for (ArgsDto argsDto : argsDtos) {
@@ -132,8 +144,14 @@ public class YamlGenServiceImpl implements YamlGenService {
                                     }
                                 }
                             }
-
                         });
+
+                if(filterBuilder.length()>0) {
+                    filterBuilder.insert(0, "        filters:\n");
+                }
+                if(predicateBuilder.length()>0) {
+                    predicateBuilder.insert(0, "        predicate:\n");
+                }
                 writer.write(String.valueOf(filterBuilder));
                 writer.write(String.valueOf(predicateBuilder));
                 filterBuilder.delete(0, filterBuilder.length());
@@ -141,19 +159,12 @@ public class YamlGenServiceImpl implements YamlGenService {
             }
             writer.flush();
 
-            System.out.println("DONE");
         } catch(IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if(writer != null) writer.close();
-            } catch(IOException e) {
-                e.printStackTrace();
-            }
         }
         return Mono.fromRunnable(() -> {
             // Perform the desired actions here
-
+            logger.info("YamlGenServiceImpl-writeYaml()-DONE");
         });
     }
 }

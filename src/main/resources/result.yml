@@ -2,10 +2,10 @@ spring:
   cloud:
     gateway:
       routes:
-      - id: 1
-        uri: test
+      - id: 11
+        uri: test11
         filters:
-        - name: filters1
+        - filters1
           args:
             key: message
         predicate:
