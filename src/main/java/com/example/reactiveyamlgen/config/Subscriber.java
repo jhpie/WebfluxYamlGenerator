@@ -7,6 +7,8 @@ import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
 import com.example.reactiveyamlgen.service.impl.YamlGenServiceImpl;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.reactivestreams.Subscription;
@@ -18,6 +20,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@Getter
+@Setter
 public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate, Args>> {
 
     private final List<RouteDto> routeDtos = new ArrayList<>();
