@@ -24,7 +24,6 @@ import reactor.util.function.Tuple3;
 
 @RestController
 @RequestMapping(value = "/yaml")
-//@Validated
 public class YamlGenController {
     private final YamlGenService yamlGenService;
     @Autowired
