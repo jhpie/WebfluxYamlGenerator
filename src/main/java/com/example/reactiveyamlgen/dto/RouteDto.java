@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class RouteDto {
     private Long id;
     @NotBlank(message="uri 는 필수값 입니다.")
     private String uri;
-    @NotBlank(message="domainId 는 필수값 입니다.")
+    @NotNull(message="domainId 는 필수값 입니다.")
     private Long domainId;
     @NotBlank(message="routeId 는 필수값 입니다.")
     private String routeId;

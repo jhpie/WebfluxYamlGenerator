@@ -2,6 +2,7 @@ package com.example.reactiveyamlgen.controller;
 
 import com.example.reactiveyamlgen.config.Subscriber;
 import com.example.reactiveyamlgen.dto.RouteDto;
+import com.example.reactiveyamlgen.dto.ValidList;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -10,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,11 +21,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
-import javax.validation.Valid;
-
 
 @RestController
 @RequestMapping(value = "/yaml")
+//@Validated
 public class YamlGenController {
     private final YamlGenService yamlGenService;
     @Autowired
@@ -32,14 +32,9 @@ public class YamlGenController {
         this.yamlGenService = yamlGenService;
     }
 
-//    @PostMapping(value = "/create")
-//    private Flux<Void> create(@RequestBody @Valid List<RouteDto> routeDtos) {
-//        return yamlGenService.saveYaml(routeDtos);
-//    }
-    //TEST
     @PostMapping(value = "/create")
-    private ResponseEntity<String> create(@RequestBody @Valid RouteDto routeDto) {
-        return ResponseEntity.ok().build();
+    private Flux<Void> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+        return yamlGenService.saveYaml(routeDtos);
     }
 
     @PostMapping(value = "/write")
