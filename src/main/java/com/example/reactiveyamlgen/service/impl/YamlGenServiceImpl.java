@@ -3,6 +3,8 @@ package com.example.reactiveyamlgen.service.impl;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
+import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
+import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -86,12 +88,13 @@ public class YamlGenServiceImpl implements YamlGenService {
                         .map(filterAndPredicate -> Tuples.of(route, filterAndPredicate)))
                 .flatMap(routeAndFilter -> argsRepository.findAllByParentName(routeAndFilter.getT2().getName())
                         .map(args -> Tuples.of(routeAndFilter.getT1(), routeAndFilter.getT2(), args)))
-                .doOnNext(item -> logger.info("Item: " + item.toString()));
+                .doOnNext(item -> logger.info("Item: " + item.toString()))
+                .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found In DB")));
     }
 
-    public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) {
+    public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException {
         if (routeDtos.isEmpty()) {
-            throw new IllegalArgumentException("routeDtos cannot be null");
+            throw new RouteNotFoundException("No routes found In List<RouteDto>");
         }
         //파일객체 생성
         File file = new File(TARGET_DIRECTORY_PATH + "result.yml");
@@ -158,8 +161,8 @@ public class YamlGenServiceImpl implements YamlGenService {
                 predicateBuilder.delete(0, filterBuilder.length());
             }
             writer.flush();
-        } catch(IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new YamlFileIoException("Error occurred while writing YAML file", e);
         }
         return Mono.fromRunnable(() -> {
             // Perform the desired actions here

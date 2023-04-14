@@ -3,6 +3,8 @@ package com.example.reactiveyamlgen.controller;
 import com.example.reactiveyamlgen.config.Subscriber;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.ValidList;
+import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
+import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -36,7 +38,7 @@ public class YamlGenController {
     }
 
     @PostMapping(value = "/write")
-    public Mono<Void> write() {
+    public Mono<Void> write() throws YamlFileIoException, RouteNotFoundException {
         Flux<Tuple3<Route, FilterAndPredicate, Args>> routeFlux = yamlGenService.readYaml();
         Subscriber subscriber = new Subscriber();
         routeFlux.subscribe(subscriber);

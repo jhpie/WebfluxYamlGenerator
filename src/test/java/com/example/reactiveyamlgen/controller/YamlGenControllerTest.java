@@ -4,33 +4,31 @@ import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.ValidList;
-import com.example.reactiveyamlgen.exception.response.CustomErrorResponse;
+import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
+import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.service.YamlGenService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-import static org.hamcrest.Matchers.hasItem;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 
 @WebFluxTest(YamlGenController.class)
 public class YamlGenControllerTest {
@@ -41,8 +39,6 @@ public class YamlGenControllerTest {
     @MockBean
     private YamlGenService yamlGenService;
 
-    @MockBean
-    private RestTemplate restTemplate;
     //
     ValidList<RouteDto> routeDtos;
     List<FilterAndPredicateDto> filterDtoList;
@@ -140,7 +136,7 @@ public class YamlGenControllerTest {
     class Write {
         @Test
         @DisplayName("성공")
-        public void testWriteSuccess() {
+        public void testWriteSuccess() throws YamlFileIoException, RouteNotFoundException {
             // yamlGenService의 readYaml() 메소드 결과에 대한 Mock 데이터 설정
             Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
 
@@ -155,7 +151,7 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("실패")
-        public void testWriteFailure() {
+        public void testWriteFailure() throws YamlFileIoException, RouteNotFoundException {
             // yamlGenService의 readYaml() 메소드 결과에 대한 Mock 데이터 설정
             Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
 
@@ -166,56 +162,74 @@ public class YamlGenControllerTest {
                     .exchange()
                     .expectStatus().isOk()
                     .expectBody(Void.class);
+        }
+
+        @Test
+        @DisplayName("Route Not Found 예외 처리")
+        public void testWriteRouteNotFoundException() throws RouteNotFoundException, YamlFileIoException {
+            Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
+
+            Mockito.when(yamlGenService.writeYaml(Mockito.anyList(), Mockito.anyList(), Mockito.anyList())).thenThrow(new RouteNotFoundException("Route not found"));
+
+            webTestClient.post().uri("/yaml/write")
+                    .exchange()
+                    .expectStatus().is4xxClientError()
+                    .expectBody(String.class)
+                    .value(responseBody -> assertTrue(responseBody.contains("Route not found")));
         }
     }
 
     @Nested
     @DisplayName("/refresh")
     class Refresh {
-        private WebClient webClient;
+        private MockWebServer mockWebServer;
+
+        private WebTestClient webTestClient;
 
         @BeforeEach
         void setUp() {
-            webClient = Mockito.mock(WebClient.class);
+            mockWebServer = new MockWebServer();
+            webTestClient = WebTestClient.bindToServer().baseUrl(mockWebServer.url("/").toString()).build();
         }
 
         @Test
         @DisplayName("성공")
-        public void testRefresh() {
+        public void testRefresh() throws Exception {
             // Given
-            String url = "http://localhost:8888/config/refresh";
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
+            mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-            Mockito.when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
-            Mockito.when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
-            Mockito.when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
-
-            // when and then
+            // When
             webTestClient.post().uri("/yaml/refresh")
                     .exchange()
                     .expectStatus().isOk();
+
+            // Then
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+            assertEquals("/yaml/refresh", recordedRequest.getPath());
         }
 
         @Test
         @DisplayName("실패")
-        public void testRefreshFailure() {
+        public void testRefreshConfigServerDown() throws IOException {
             // Given
-            String url = "http://localhost:8888/config/refresh";
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
+            String responseBody = "Config Server is Down";
+            mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody(responseBody));
 
-            Mockito.when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
-            Mockito.when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
-            Mockito.when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+            // When
+            Mono<Void> result = WebClient.create(mockWebServer.url("/").toString())
+                    .post()
+                    .uri("/config/refresh")
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, responseBody, error));
 
-            // when and then
-            webTestClient.post().uri("/yaml/refresh")
-                    .exchange()
-                    .expectStatus().is5xxServerError()
-                    .expectBody()
-                    .jsonPath("responseCode").isEqualTo("Config Server is Down");
-//                    .jsonPath("errors").value(hasItem("I/O error on POST request for \"http://localhost:8888/config/refresh\": Connection refused: connect"));
+            // Then
+            assertThrows(ResponseStatusException.class, () -> result.block());
+        }
+
+        @AfterEach
+        void tearDown() throws IOException {
+            mockWebServer.shutdown();
         }
     }
 

@@ -1,5 +1,8 @@
 package com.example.reactiveyamlgen.exception.handler;
 
+import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
+import com.example.reactiveyamlgen.exception.exception.SubscriberException;
+import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.exception.response.CustomErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -46,7 +49,7 @@ public class YamlExceptionHandler {
         List<String> errors = new ArrayList<>();
         errors.add(errorsMessage);
         CustomErrorResponse response = new CustomErrorResponse("routeDtos cannot be null", errors);
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(IOException.class)
@@ -57,4 +60,36 @@ public class YamlExceptionHandler {
         CustomErrorResponse response = new CustomErrorResponse("file write fail", errors);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(SubscriberException.class)
+    public ResponseEntity<Object> handleSubscriberException(SubscriberException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("Subscriber error", errors);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(RouteNotFoundException.class)
+    public ResponseEntity<Object> handleRouteNotFoundException(RouteNotFoundException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("Null in DB", errors);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(YamlFileIoException.class)
+    public ResponseEntity<Object> handleYamlFileIoException(YamlFileIoException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("file write fail", errors);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
+
+
+
 }

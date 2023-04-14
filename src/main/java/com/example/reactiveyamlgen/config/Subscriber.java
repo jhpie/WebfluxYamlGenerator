@@ -3,12 +3,13 @@ package com.example.reactiveyamlgen.config;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
+import com.example.reactiveyamlgen.exception.exception.SubscriberException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
-import com.example.reactiveyamlgen.service.impl.YamlGenServiceImpl;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.reactivestreams.Subscription;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@Slf4j
 public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate, Args>> {
 
     private final List<RouteDto> routeDtos = new ArrayList<>();
@@ -75,7 +77,12 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
 
     @Override
     protected void hookOnError(Throwable throwable) {
-        System.out.println("Error occurred: " + throwable.getMessage());
+        logger.error("Error occurred: " + throwable.getMessage());
+        try {
+            throw new SubscriberException("An error occurred in Subscriber");
+        } catch (SubscriberException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
