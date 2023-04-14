@@ -19,12 +19,17 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 
 @WebFluxTest(YamlGenController.class)
@@ -170,30 +175,40 @@ public class YamlGenControllerTest {
         @Test
         @DisplayName("성공")
         public void testRefresh() {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> requestEntity = new HttpEntity<String>("", headers);
+            WebClient webClient = WebClient.builder().build();
             String url = "http://localhost:8888/config/refresh";
-            Mockito.when(restTemplate.postForObject(url, requestEntity, Void.class)).thenReturn(null);
-        }
-        @Test
-        @DisplayName("실패")
-        public void testRefreshFailure() {
-            String url = "http://localhost:8888/config/refresh";
-            Mockito.when(restTemplate.postForObject(any(), any(), any()))
-                    .thenThrow(new ResourceAccessException("I/O error on POST request for \"http://localhost:8888/config/refresh\": Connection refused: connect"));
+            Mockito.when(webClient.post().uri(url).retrieve().toBodilessEntity()).thenReturn(Mono.empty());
 
-
-
-            // Send the request and check the response
             webTestClient.post().uri("/yaml/refresh")
                     .contentType(MediaType.APPLICATION_JSON)
                     .exchange()
+                    .expectStatus().isOk();
+        }
+
+        @Test
+        @DisplayName("실패")
+        public void testRefreshFailure() {
+            WebClient webClient = Mockito.mock(WebClient.class);
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
+
+            String url = "http://localhost:8888/config/refresh";
+
+//            Mockito.when(webClient.post()).thenReturn(requestHeadersUriSpec);
+            Mockito.when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+            Mockito.when(requestHeadersUriSpec.retrieve()).thenThrow(new RuntimeException("Config Server is Down"));
+
+            // when and then
+            webTestClient.post().uri("/yaml/refresh")
+                    .exchange()
                     .expectStatus().is5xxServerError()
                     .expectBody()
-                    .jsonPath("responseCode").isEqualTo("Config Server is Down")
-                    .jsonPath("errors").isEqualTo("I/O error on POST request for \"http://localhost:8888/config/refresh\": Connection refused: connect");
+                    .jsonPath("$.responseCode").isEqualTo("Config Server is Down")
+                    .jsonPath("$.errors").value(hasItem("I/O error on POST request for \"http://localhost:8888/config/refresh\": Connection refused: connect"));
         }
+
+
+
 
 
     }

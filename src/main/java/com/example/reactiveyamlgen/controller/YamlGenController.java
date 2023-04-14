@@ -8,15 +8,14 @@ import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
 import com.example.reactiveyamlgen.service.YamlGenService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
@@ -47,13 +46,12 @@ public class YamlGenController {
     }
 
     @PostMapping(value = "/refresh")
-    public void refresh() {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> requestEntity = new HttpEntity<String>("", headers);
-
-        String url = "http://localhost:8888/config/refresh";
-        restTemplate.postForObject(url, requestEntity, Void.class);
+    public Mono<Void> refresh() {
+        WebClient client = WebClient.create("http://localhost:8888");
+        return client.post()
+                .uri("/config/refresh")
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Config Server is Down", error));
     }
 }

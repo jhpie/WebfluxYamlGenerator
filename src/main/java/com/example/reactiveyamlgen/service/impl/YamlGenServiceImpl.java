@@ -90,6 +90,9 @@ public class YamlGenServiceImpl implements YamlGenService {
     }
 
     public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) {
+        if (routeDtos.isEmpty()) {
+            throw new IllegalArgumentException("routeDtos cannot be null");
+        }
         //파일객체 생성
         File file = new File(TARGET_DIRECTORY_PATH + "result.yml");
 

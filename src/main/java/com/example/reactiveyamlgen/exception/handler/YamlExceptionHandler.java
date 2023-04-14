@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,12 +31,30 @@ public class YamlExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<Object> handleResourceAccessException(ResourceAccessException ex) {
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Object> handleResourceAccessException(ResponseStatusException ex) {
         String errorsMessage = ex.getMessage();
         List<String> errors = new ArrayList<>();
         errors.add(errorsMessage);
         CustomErrorResponse response = new CustomErrorResponse("Config Server is Down", errors);
         return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("routeDtos cannot be null", errors);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<Object> handleIllegalIOException(IOException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("file write fail", errors);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
