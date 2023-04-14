@@ -172,13 +172,27 @@ public class YamlGenControllerTest {
     @Nested
     @DisplayName("/refresh")
     class Refresh {
+        private WebClient webClient;
+
+        @BeforeEach
+        void setUp() {
+            webClient = Mockito.mock(WebClient.class);
+        }
+
         @Test
         @DisplayName("성공")
         public void testRefresh() {
-            WebClient webClient = WebClient.builder().build();
+            // Given
             String url = "http://localhost:8888/config/refresh";
-            Mockito.when(webClient.post().uri(url).retrieve().toBodilessEntity()).thenReturn(Mono.empty());
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
 
+            Mockito.when(webClient.post()).thenReturn(requestHeadersUriSpec);
+            Mockito.when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
+            Mockito.when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+            Mockito.when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+
+            // when and then
             webTestClient.post().uri("/yaml/refresh")
                     .contentType(MediaType.APPLICATION_JSON)
                     .exchange()
@@ -188,15 +202,16 @@ public class YamlGenControllerTest {
         @Test
         @DisplayName("실패")
         public void testRefreshFailure() {
-            WebClient webClient = Mockito.mock(WebClient.class);
+            // Given
+            String url = "http://localhost:8888/config/refresh";
             WebClient.RequestHeadersUriSpec requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
             WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
 
-            String url = "http://localhost:8888/config/refresh";
-
-//            Mockito.when(webClient.post()).thenReturn(requestHeadersUriSpec);
+            Mockito.when(webClient.post()).thenReturn((WebClient.RequestBodyUriSpec) requestHeadersUriSpec);
             Mockito.when(requestHeadersUriSpec.uri(url)).thenReturn(requestHeadersUriSpec);
-            Mockito.when(requestHeadersUriSpec.retrieve()).thenThrow(new RuntimeException("Config Server is Down"));
+            Mockito.when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+            Mockito.when(responseSpec.onErrorResume(Mockito.any()))
+                    .thenReturn(Mono.error(new RuntimeException("Config Server is Down")));
 
             // when and then
             webTestClient.post().uri("/yaml/refresh")
@@ -206,11 +221,6 @@ public class YamlGenControllerTest {
                     .jsonPath("$.responseCode").isEqualTo("Config Server is Down")
                     .jsonPath("$.errors").value(hasItem("I/O error on POST request for \"http://localhost:8888/config/refresh\": Connection refused: connect"));
         }
-
-
-
-
-
     }
 
 }
