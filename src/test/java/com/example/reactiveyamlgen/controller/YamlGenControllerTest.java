@@ -217,22 +217,21 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("실패")
-        void testRefreshConfigServerDown() throws IOException {
+        void testRefreshConfigServerDown() throws IOException, InterruptedException {
             // Given
-            String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
-            WebClient client = WebClient.builder().baseUrl(baseUrl).build();
-
             String responseBody = "Config Server is Down";
             mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody(responseBody));
 
             // When
-            Mono<Void> result = client.post().uri("/yaml/refresh")
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, responseBody, error));
-
+            webTestClient.post().uri("/yaml/refresh")
+                    .exchange()
+                    .expectStatus().is5xxServerError()
+                    .expectBody()
+                    .jsonPath("responseCode").isEqualTo("Config Server is Down")
+                    .jsonPath("errors").isEqualTo("500 INTERNAL_SERVER_ERROR \"Config Server is Down\"");
             // Then
-            assertThrows(ResponseStatusException.class, () -> result.block());
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+            assertEquals("/yaml/refresh", recordedRequest.getPath());
         }
 
     }
