@@ -40,6 +40,8 @@ public class YamlGenControllerTest {
     @MockBean
     private YamlGenService yamlGenService;
 
+    private static MockWebServer mockWebServer;
+
     //
     ValidList<RouteDto> routeDtos;
     List<FilterAndPredicateDto> filterDtoList;
@@ -51,6 +53,7 @@ public class YamlGenControllerTest {
     FilterAndPredicateDto filterDto;
     FilterAndPredicateDto predicateDto;
     RouteDto routeDto;
+
     @BeforeEach
     public void init() {
         routeDtos = new ValidList<>();
@@ -99,6 +102,18 @@ public class YamlGenControllerTest {
         routeDto.setMetadata("for Test ROUTE");
 
         routeDtos.add(routeDto);
+    }
+
+
+    @BeforeAll
+    static void setUp() throws IOException {
+        mockWebServer = new MockWebServer();
+        mockWebServer.start(8888);
+    }
+
+    @AfterAll
+    static void tearDown() throws IOException {
+        mockWebServer.shutdown();
     }
 
     @Nested
@@ -182,13 +197,11 @@ public class YamlGenControllerTest {
     @Nested
     @DisplayName("/refresh")
     class Refresh {
-        private final MockWebServer mockWebServer = new MockWebServer();
 
         @Test
         @DisplayName("성공")
         void testRefresh() throws Exception {
             // Given
-            mockWebServer.start(8888);
             String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
             WebClient client = WebClient.builder().baseUrl(baseUrl).build();
 
@@ -209,7 +222,6 @@ public class YamlGenControllerTest {
         @DisplayName("실패")
         void testRefreshConfigServerDown() throws IOException {
             // Given
-            mockWebServer.start(8888);
             String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
             WebClient client = WebClient.builder().baseUrl(baseUrl).build();
 
@@ -226,10 +238,7 @@ public class YamlGenControllerTest {
             assertThrows(ResponseStatusException.class, () -> result.block());
         }
 
-        @AfterEach
-        void tearDown() throws IOException {
-            mockWebServer.shutdown();
-        }
     }
+
 }
 
