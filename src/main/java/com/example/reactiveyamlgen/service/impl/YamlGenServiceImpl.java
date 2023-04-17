@@ -96,11 +96,11 @@ public class YamlGenServiceImpl implements YamlGenService {
         if (routeDtos.isEmpty()) {
             throw new RouteNotFoundException("No routes found In List<RouteDto>");
         }
-        //파일객체 생성
-        File file = new File(TARGET_DIRECTORY_PATH + "result.yml");
+
 
         try {
-            // Set true to overwrite the contents of the existing file, false to delete the existing contents and overwrite the new ones
+            //파일객체 생성
+            File file = new File(TARGET_DIRECTORY_PATH + "result.yml");
             FileWriter writer = new FileWriter(file, false);
             writer.write(
                     "spring:\n" +
@@ -108,18 +108,16 @@ public class YamlGenServiceImpl implements YamlGenService {
                             "    gateway:\n" +
                             "      routes:\n");
             for (RouteDto routeDto : routeDtos) {
-                // Write each routeDto element to the file
+
                 writer.write("      - id: " + routeDto.getRouteId() + "\n");
                 writer.write("        uri: " + routeDto.getUri() + "\n");
 
-                // Find the FilterAndPredicateDto with matching routeId
                 StringBuilder filterBuilder = new StringBuilder();
                 StringBuilder predicateBuilder = new StringBuilder();
                 filterAndPredicateDtos.stream()
                         .filter(filterAndPredicateDto -> filterAndPredicateDto.getRouteId().equals(routeDto.getRouteId()))
                         .forEach(filterAndPredicateDto -> {
                             if(filterAndPredicateDto.getIsFilter()==Boolean.TRUE) {
-                                // Write matching FilterAndPredicateDto content
                                 if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
                                     filterBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
                                 }else{
@@ -128,12 +126,10 @@ public class YamlGenServiceImpl implements YamlGenService {
                                 filterBuilder.append("          args:\n");
                                 for (ArgsDto argsDto : argsDtos) {
                                     if (argsDto.getParentName().equals(filterAndPredicateDto.getName()) && argsDto.getRouteId().equals(filterAndPredicateDto.getRouteId())) {
-                                        // Write ArgsDto content
                                         filterBuilder.append("            ").append(argsDto.getHashKey()).append(": ").append(argsDto.getHashValue()).append("\n");
                                     }
                                 }
                             }else{
-                                // Write PredicateDto content
                                 if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
                                     predicateBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
                                 }else{
@@ -165,7 +161,7 @@ public class YamlGenServiceImpl implements YamlGenService {
             throw new YamlFileIoException("Error occurred while writing YAML file", e);
         }
         return Mono.fromRunnable(() -> {
-            // Perform the desired actions here
+
             logger.info("YamlGenServiceImpl-writeYaml()-DONE");
         });
     }

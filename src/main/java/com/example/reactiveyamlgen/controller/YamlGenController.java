@@ -33,7 +33,7 @@ public class YamlGenController {
     }
 
     @PostMapping(value = "/create")
-    private Flux<Void> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+    public Flux<Void> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
         return yamlGenService.saveYaml(routeDtos);
     }
 
@@ -49,9 +49,9 @@ public class YamlGenController {
 
     @PostMapping(value = "/refresh")
     public Mono<Void> refresh() {
-        WebClient client = WebClient.create("http://localhost:8888");
+        WebClient client = WebClient.create("http://127.0.0.1:8888");
         return client.post()
-                .uri("/config/refresh")
+                .uri("/yaml/refresh")
                 .retrieve()
                 .bodyToMono(Void.class)
                 .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Config Server is Down", error));

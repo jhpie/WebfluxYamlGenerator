@@ -36,7 +36,7 @@ public class FilterAndPredicate{
         this.name = filterAndPredicateDto.getName();
         this.isName = filterAndPredicateDto.getIsName();
         this.isFilter = filterAndPredicateDto.getIsFilter();
-        this.args = filterAndPredicateDto.getArgs().stream().map(Args::new).collect(Collectors.toList());
+        this.args = filterAndPredicateDto.getArgs().stream().map(Args::new).toList();
     }
     public FilterAndPredicateDto toDto() {
         FilterAndPredicateDto dto = new FilterAndPredicateDto();

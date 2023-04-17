@@ -25,6 +25,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,7 +119,7 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("실패")
-        public void testCreateFailure() {
+        void testCreateFailure() {
             routeDtos.clear();
 
             webTestClient.post().uri("/yaml/create")
@@ -136,7 +137,7 @@ public class YamlGenControllerTest {
     class Write {
         @Test
         @DisplayName("성공")
-        public void testWriteSuccess() throws YamlFileIoException, RouteNotFoundException {
+        void testWriteSuccess() throws YamlFileIoException, RouteNotFoundException {
             // yamlGenService의 readYaml() 메소드 결과에 대한 Mock 데이터 설정
             Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
 
@@ -151,7 +152,7 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("실패")
-        public void testWriteFailure() throws YamlFileIoException, RouteNotFoundException {
+        void testWriteFailure() throws YamlFileIoException, RouteNotFoundException {
             // yamlGenService의 readYaml() 메소드 결과에 대한 Mock 데이터 설정
             Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
 
@@ -166,7 +167,7 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("Route Not Found 예외 처리")
-        public void testWriteRouteNotFoundException() throws RouteNotFoundException, YamlFileIoException {
+        void testWriteRouteNotFoundException() throws RouteNotFoundException, YamlFileIoException {
             Mockito.when(yamlGenService.readYaml()).thenReturn(Flux.empty());
 
             Mockito.when(yamlGenService.writeYaml(Mockito.anyList(), Mockito.anyList(), Mockito.anyList())).thenThrow(new RouteNotFoundException("Route not found"));
@@ -178,30 +179,26 @@ public class YamlGenControllerTest {
                     .value(responseBody -> assertTrue(responseBody.contains("Route not found")));
         }
     }
-
     @Nested
     @DisplayName("/refresh")
     class Refresh {
-        private MockWebServer mockWebServer;
-
-        private WebTestClient webTestClient;
-
-        @BeforeEach
-        void setUp() {
-            mockWebServer = new MockWebServer();
-            webTestClient = WebTestClient.bindToServer().baseUrl(mockWebServer.url("/").toString()).build();
-        }
+        private final MockWebServer mockWebServer = new MockWebServer();
 
         @Test
         @DisplayName("성공")
-        public void testRefresh() throws Exception {
+        void testRefresh() throws Exception {
             // Given
+            mockWebServer.start(8888);
+            String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
+            WebClient client = WebClient.builder().baseUrl(baseUrl).build();
+
             mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
             // When
-            webTestClient.post().uri("/yaml/refresh")
-                    .exchange()
-                    .expectStatus().isOk();
+            client.post().uri("/yaml/refresh")
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
 
             // Then
             RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -210,15 +207,17 @@ public class YamlGenControllerTest {
 
         @Test
         @DisplayName("실패")
-        public void testRefreshConfigServerDown() throws IOException {
+        void testRefreshConfigServerDown() throws IOException {
             // Given
+            mockWebServer.start(8888);
+            String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
+            WebClient client = WebClient.builder().baseUrl(baseUrl).build();
+
             String responseBody = "Config Server is Down";
             mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody(responseBody));
 
             // When
-            Mono<Void> result = WebClient.create(mockWebServer.url("/").toString())
-                    .post()
-                    .uri("/config/refresh")
+            Mono<Void> result = client.post().uri("/yaml/refresh")
                     .retrieve()
                     .bodyToMono(Void.class)
                     .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, responseBody, error));
@@ -232,5 +231,5 @@ public class YamlGenControllerTest {
             mockWebServer.shutdown();
         }
     }
-
 }
+

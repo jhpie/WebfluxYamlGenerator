@@ -85,11 +85,6 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
         }
     }
 
-    @Override
-    protected void hookOnComplete() {
-
-    }
-
     public void clearDtos() {
         routeDtos.clear();
         filterAndPredicateDtos.clear();

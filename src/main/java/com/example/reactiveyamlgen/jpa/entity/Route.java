@@ -9,7 +9,6 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Table("route")
 @Getter
@@ -42,8 +41,8 @@ public class Route {
         this.domainId = routeDto.getDomainId();
         this.routeId = routeDto.getRouteId();
         this.metadata = routeDto.getMetadata();
-        this.predicates = routeDto.getPredicates().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
-        this.filters = routeDto.getFilters().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
+        this.predicates = routeDto.getPredicates().stream().map(FilterAndPredicate::new).toList();
+        this.filters = routeDto.getFilters().stream().map(FilterAndPredicate::new).toList();
     }
 
     public RouteDto toDto() {
