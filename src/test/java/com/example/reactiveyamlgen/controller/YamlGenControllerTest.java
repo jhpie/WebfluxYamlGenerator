@@ -202,16 +202,13 @@ public class YamlGenControllerTest {
         @DisplayName("성공")
         void testRefresh() throws Exception {
             // Given
-            String baseUrl = "http://" + InetAddress.getByName("localhost").getHostAddress() + ":" + mockWebServer.getPort();
-            WebClient client = WebClient.builder().baseUrl(baseUrl).build();
-
             mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
             // When
-            client.post().uri("/yaml/refresh")
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+            webTestClient.post().uri("/yaml/refresh")
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody(Void.class);
 
             // Then
             RecordedRequest recordedRequest = mockWebServer.takeRequest();
