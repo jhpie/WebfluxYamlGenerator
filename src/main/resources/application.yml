@@ -3,9 +3,10 @@ server:
 spring:
   cloud:
     config:
-      uri: http://localhost:8888
-      name: service-a
-      enabled: false
+      server:
+        git:
+          uri: https://github.com/jhpie/config-server.git
+          search-paths: C:\IdeaProjects\reactive-yaml-gen\src\main\resources
   application:
     name: service-a
   r2dbc:
@@ -40,3 +41,5 @@ management:
 
 target:
   directory: C:\\IdeaProjects\\reactive-yaml-gen\\src\\main\\resources\\
+
+temp-path: C:\result

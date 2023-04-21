@@ -7,29 +7,24 @@ import com.example.reactiveyamlgen.dto.ValidList;
 import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
 import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.service.YamlGenService;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WebFluxTest(YamlGenController.class)
 public class YamlGenControllerTest {
@@ -40,9 +35,8 @@ public class YamlGenControllerTest {
     @MockBean
     private YamlGenService yamlGenService;
 
-    private static MockWebServer mockWebServer;
 
-    //
+
     ValidList<RouteDto> routeDtos;
     List<FilterAndPredicateDto> filterDtoList;
     List<FilterAndPredicateDto> predicateDtoList;
@@ -105,16 +99,7 @@ public class YamlGenControllerTest {
     }
 
 
-    @BeforeAll
-    static void setUp() throws IOException {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start(8888);
-    }
 
-    @AfterAll
-    static void tearDown() throws IOException {
-        mockWebServer.shutdown();
-    }
 
     @Nested
     @DisplayName("/create")
@@ -194,47 +179,7 @@ public class YamlGenControllerTest {
                     .value(responseBody -> assertTrue(responseBody.contains("Route not found")));
         }
     }
-    @Nested
-    @DisplayName("/refresh")
-    class Refresh {
 
-        @Test
-        @DisplayName("성공")
-        void testRefresh() throws Exception {
-            // Given
-            mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-
-            // When
-            webTestClient.post().uri("/yaml/refresh")
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody(Void.class);
-
-            // Then
-            RecordedRequest recordedRequest = mockWebServer.takeRequest();
-            assertEquals("/yaml/refresh", recordedRequest.getPath());
-        }
-
-        @Test
-        @DisplayName("실패")
-        void testRefreshConfigServerDown() throws IOException, InterruptedException {
-            // Given
-            String responseBody = "Config Server is Down";
-            mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody(responseBody));
-
-            // When
-            webTestClient.post().uri("/yaml/refresh")
-                    .exchange()
-                    .expectStatus().is5xxServerError()
-                    .expectBody()
-                    .jsonPath("responseCode").isEqualTo("Config Server is Down")
-                    .jsonPath("errors").isEqualTo("500 INTERNAL_SERVER_ERROR \"Config Server is Down\"");
-            // Then
-            RecordedRequest recordedRequest = mockWebServer.takeRequest();
-            assertEquals("/yaml/refresh", recordedRequest.getPath());
-        }
-
-    }
 
 }
 

@@ -3,6 +3,7 @@ package com.example.reactiveyamlgen.exception.handler;
 import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
 import com.example.reactiveyamlgen.exception.exception.SubscriberException;
 import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
+import com.example.reactiveyamlgen.exception.exception.YamlFileNotFoundException;
 import com.example.reactiveyamlgen.exception.response.CustomErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +89,14 @@ public class YamlExceptionHandler {
     }
 
 
-
+    @ExceptionHandler(YamlFileNotFoundException.class)
+    public ResponseEntity<Object> handleFileNotFoundException(YamlFileNotFoundException ex) {
+        String errorsMessage = ex.getMessage();
+        List<String> errors = new ArrayList<>();
+        errors.add(errorsMessage);
+        CustomErrorResponse response = new CustomErrorResponse("yaml file not found", errors);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
 
 }
