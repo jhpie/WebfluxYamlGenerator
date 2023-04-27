@@ -1,6 +1,7 @@
 package com.example.reactiveyamlgen.controller;
 
 
+import com.example.reactiveyamlgen.dto.MessageDto;
 import com.example.reactiveyamlgen.exception.exception.YamlFileNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +11,14 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +63,8 @@ public class GitController {
 
 
 
-    @PostMapping("/refresh")
-    public void onRefresh() throws YamlFileNotFoundException {
+    @PostMapping("/push")
+    public Mono<String> pushToGitRepository(@RequestBody MessageDto messageDto) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         String timestamp = dateFormat.format(new Date());
 
@@ -68,31 +74,29 @@ public class GitController {
         if (Files.exists(resultFilePath)) {
             try {
                 Files.copy(resultFilePath, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
                 git.add().addFilepattern(".").call();
-                git.commit().setMessage("Add temp file with timestamp").call();
+                git.commit().setMessage(messageDto.getMessage()).call();
                 git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider("token", "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")).call();
-            } catch (GitAPIException e) {
+                return Mono.just("Pushed to git repository successfully!");
+            } catch (IOException | GitAPIException e) {
                 e.printStackTrace();
+                return Mono.error(e);
             }
         } else {
             logger.info("result.yml file not found");
-            throw new YamlFileNotFoundException("result.yml file not found");
+            return Mono.error(new YamlFileNotFoundException("result.yml file not found"));
         }
     }
 
-    //gateway에게 actuator/refresh 호출할 메서드
-//    @PostMapping(value = "/refresh")
-//    public Mono<Void> refresh() {
-//        WebClient client = WebClient.create("http://127.0.0.1:8888");
-//        return client.post()
-//                .uri("/actuator/refresh")
-//                .retrieve()
-//                .bodyToMono(Void.class)
-//                .onErrorMap(error -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Gateway Server is Down", error));
-//    }
+    @PostMapping(value = "/refresh")
+    public Mono<String> refresh() {
+        WebClient client = WebClient.create("http://127.0.0.1:8888");
+        return client.post()
+                .uri("/actuator/refresh")
+                .retrieve()
+                .bodyToMono(Void.class)
+                .thenReturn("Success")
+                .onErrorResume(error -> Mono.just("Gateway Server is Down"));
+    }
 
 }

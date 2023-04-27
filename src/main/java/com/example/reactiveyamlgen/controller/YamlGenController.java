@@ -19,6 +19,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/yaml")
 public class YamlGenController {
@@ -31,6 +33,11 @@ public class YamlGenController {
     @PostMapping(value = "/create")
     public Flux<Void> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
         return yamlGenService.saveYaml(routeDtos);
+    }
+
+    @PostMapping(value = "/read")
+    public Mono<List<RouteDto>> read() {
+        return yamlGenService.getYaml();
     }
 
     @PostMapping(value = "/write")

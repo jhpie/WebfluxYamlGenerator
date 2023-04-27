@@ -17,5 +17,6 @@ import java.util.List;
 public interface YamlGenService {
     Flux<Void> saveYaml(List<RouteDto> dto);
     Flux<Tuple3<Route, FilterAndPredicate, Args>> readYaml();
+    Mono<List<RouteDto>> getYaml();
     Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException;
 }

@@ -1,5 +1,6 @@
 package com.example.reactiveyamlgen.dto;
 
+import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -32,6 +33,14 @@ public class FilterAndPredicateDto{
 
     @Valid
     private List<ArgsDto> args;
+
+    public FilterAndPredicateDto(FilterAndPredicate t2) {
+        this.id = t2.getId();
+        this.routeId = t2.getRouteId();
+        this.name = t2.getName();
+        this.isName = t2.getIsName();
+        this.isFilter = t2.getIsFilter();
+    }
 
     @Override
     public boolean equals(Object obj) {

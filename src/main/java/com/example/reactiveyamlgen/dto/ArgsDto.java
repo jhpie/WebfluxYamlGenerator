@@ -1,5 +1,6 @@
 package com.example.reactiveyamlgen.dto;
 
+import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -30,6 +31,14 @@ public class ArgsDto {
 
     @NotBlank(message="hashValue 는 필수값 입니다.")
     private String hashValue;
+
+    public ArgsDto(Args args) {
+        this.id = args.getId();
+        this.routeId = args.getRouteId();
+        this.parentName = args.getParentName();
+        this.hashKey = args.getHashKey();
+        this.hashValue = args.getHashValue();
+    }
 
     @Override
     public boolean equals(Object obj) {

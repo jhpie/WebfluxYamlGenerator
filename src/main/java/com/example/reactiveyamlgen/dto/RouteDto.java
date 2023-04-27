@@ -1,5 +1,8 @@
 package com.example.reactiveyamlgen.dto;
 
+import com.example.reactiveyamlgen.jpa.entity.Args;
+import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
+import com.example.reactiveyamlgen.jpa.entity.Route;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -34,6 +37,14 @@ public class RouteDto {
 
     @Valid
     private List<FilterAndPredicateDto> filters;
+
+    public RouteDto(Route t1) {
+        this.id = t1.getId();
+        this.uri = t1.getUri();
+        this.domainId = t1.getDomainId();
+        this.routeId = t1.getRouteId();
+        this.metadata = t1.getMetadata();
+    }
 
     @Override
     public boolean equals(Object obj) {

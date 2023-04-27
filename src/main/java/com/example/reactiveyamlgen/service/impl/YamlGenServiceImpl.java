@@ -1,5 +1,6 @@
 package com.example.reactiveyamlgen.service.impl;
 
+import com.example.reactiveyamlgen.config.Subscriber;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
@@ -27,7 +28,9 @@ import reactor.util.function.Tuples;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,6 +93,61 @@ public class YamlGenServiceImpl implements YamlGenService {
                         .map(args -> Tuples.of(routeAndFilter.getT1(), routeAndFilter.getT2(), args)))
                 .doOnNext(item -> logger.info("Item: " + item.toString()))
                 .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found In DB")));
+    }
+    public Mono<List<RouteDto>> getYaml() {
+        return readYaml()
+                .collectList()
+                .flatMap(tupleList -> {
+                    List<ArgsDto> argsDtos = new ArrayList<>();
+                    List<FilterAndPredicateDto> filterAndPredicateDtos = new ArrayList<>();
+                    List<RouteDto> routeDtos = new ArrayList<>();
+
+                    for (Tuple3<Route, FilterAndPredicate, Args> tuple : tupleList) {
+                        RouteDto routeDto = new RouteDto(tuple.getT1());
+                        if (!routeDtos.contains(routeDto)) {
+                            routeDtos.add(routeDto);
+                        }
+
+                        FilterAndPredicateDto filterAndPredicateDto = new FilterAndPredicateDto(tuple.getT2());
+                        filterAndPredicateDtos.add(filterAndPredicateDto);
+
+                        ArgsDto argsDto = new ArgsDto(tuple.getT3());
+                        argsDtos.add(argsDto);
+                    }
+
+                    Map<Boolean, List<FilterAndPredicateDto>> filterDtoMap = filterAndPredicateDtos.stream()
+                            .collect(Collectors.partitioningBy(FilterAndPredicateDto::getIsFilter));
+
+                    List<FilterAndPredicateDto> filterDtos = filterDtoMap.get(Boolean.TRUE);
+                    List<FilterAndPredicateDto> predicateDtos = filterDtoMap.get(Boolean.FALSE);
+
+                    for (FilterAndPredicateDto filterDto : filterDtos) {
+                        List<ArgsDto> matchingArgs = argsDtos.stream()
+                                .filter(argsDto -> argsDto.getParentName().equals(filterDto.getName()))
+                                .collect(Collectors.toList());
+                        filterDto.setArgs(matchingArgs);
+                    }
+
+                    for (FilterAndPredicateDto predicateDto : predicateDtos) {
+                        List<ArgsDto> matchingArgs = argsDtos.stream()
+                                .filter(argsDto -> argsDto.getParentName().equals(predicateDto.getName()))
+                                .collect(Collectors.toList());
+                        predicateDto.setArgs(matchingArgs);
+                    }
+
+                    routeDtos.forEach(routeDto -> {
+                        String routeId = routeDto.getRouteId();
+                        routeDto.setFilters(filterDtos.stream()
+                                .filter(filterDto -> filterDto.getRouteId().equals(routeId))
+                                .collect(Collectors.toList()));
+                        routeDto.setPredicates(predicateDtos.stream()
+                                .filter(predicateDto -> predicateDto.getRouteId().equals(routeId))
+                                .collect(Collectors.toList()));
+                    });
+
+                    return Mono.just(routeDtos);
+                })
+                .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found in DB")));
     }
 
     public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException {
