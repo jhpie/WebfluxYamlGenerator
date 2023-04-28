@@ -3,6 +3,7 @@ package com.example.reactiveyamlgen.service.impl;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
+import com.example.reactiveyamlgen.dto.RouteIdDto;
 import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
 import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
@@ -151,11 +152,22 @@ public class YamlGenServiceImpl implements YamlGenService {
     }
 
     @Override
-    public Mono<Void> deleteYaml() {
+    public Mono<Void> deleteYamlById(List<RouteIdDto> routeIdDtos) {
+        return Flux.fromIterable(routeIdDtos)
+                .flatMapSequential(routeIdDto ->
+                        routeRepository.deleteByRouteId(routeIdDto.getRouteId())
+                                .then(filterAndPredicateRepository.deleteByRouteId(routeIdDto.getRouteId()))
+                                .then(argsRepository.deleteByRouteId(routeIdDto.getRouteId())))
+                .then();
+    }
+
+    @Override
+    public Mono<Void> deleteYamlAll() {
         return Mono.when(routeRepository.deleteAll(),
                 filterAndPredicateRepository.deleteAll(),
                 argsRepository.deleteAll());
     }
+
 
     public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException {
         if (routeDtos.isEmpty()) {
@@ -181,10 +193,10 @@ public class YamlGenServiceImpl implements YamlGenService {
                 filterAndPredicateDtos.stream()
                         .filter(filterAndPredicateDto -> filterAndPredicateDto.getRouteId().equals(routeDto.getRouteId()))
                         .forEach(filterAndPredicateDto -> {
-                            if(filterAndPredicateDto.getIsFilter()==Boolean.TRUE) {
-                                if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
+                            if (filterAndPredicateDto.getIsFilter() == Boolean.TRUE) {
+                                if (filterAndPredicateDto.getIsName() == Boolean.TRUE) {
                                     filterBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
-                                }else{
+                                } else {
                                     filterBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
                                 }
                                 filterBuilder.append("          args:\n");
@@ -193,10 +205,10 @@ public class YamlGenServiceImpl implements YamlGenService {
                                         filterBuilder.append("            ").append(argsDto.getHashKey()).append(": ").append(argsDto.getHashValue()).append("\n");
                                     }
                                 }
-                            }else{
-                                if(filterAndPredicateDto.getIsName()==Boolean.TRUE) {
+                            } else {
+                                if (filterAndPredicateDto.getIsName() == Boolean.TRUE) {
                                     predicateBuilder.append("        - name: ").append(filterAndPredicateDto.getName()).append("\n");
-                                }else{
+                                } else {
                                     predicateBuilder.append("        - ").append(filterAndPredicateDto.getName()).append("\n");
                                 }
                                 predicateBuilder.append("          args:\n");
@@ -209,10 +221,10 @@ public class YamlGenServiceImpl implements YamlGenService {
                             }
                         });
 
-                if(filterBuilder.length()>0) {
+                if (filterBuilder.length() > 0) {
                     filterBuilder.insert(0, "        filters:\n");
                 }
-                if(predicateBuilder.length()>0) {
+                if (predicateBuilder.length() > 0) {
                     predicateBuilder.insert(0, "        predicate:\n");
                 }
                 writer.write(String.valueOf(filterBuilder));
@@ -228,5 +240,36 @@ public class YamlGenServiceImpl implements YamlGenService {
 
             logger.info("YamlGenServiceImpl-writeYaml()-DONE");
         });
+    }
+
+    public Mono<Void> updateYaml(List<RouteDto> routeDtos) {
+        Flux<Route> updateRouteFlux = Flux.fromIterable(routeDtos)
+                .flatMap(dto -> routeRepository.findByRouteId(dto.getRouteId())
+                        .flatMap(route -> {
+                            // Update the existing document with the new data
+                            route.update(dto);
+                            List<FilterAndPredicate> filterList = dto.getFilters().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
+                            List<FilterAndPredicate> predicateList = dto.getPredicates().stream().map(FilterAndPredicate::new).collect(Collectors.toList());
+                            List<Args> filterArgsList = dto.getFilters().stream()
+                                    .flatMap(filterDto -> filterDto.getArgs().stream().map(Args::new))
+                                    .collect(Collectors.toList());
+                            List<Args> predicateArgsList = dto.getPredicates().stream()
+                                    .flatMap(filterDto -> filterDto.getArgs().stream().map(Args::new))
+                                    .collect(Collectors.toList());
+                            List<Args> argsList = Stream.concat(filterArgsList.stream(), predicateArgsList.stream())
+                                    .collect(Collectors.toList());
+                            List<FilterAndPredicate> filterAndPredicateList = Stream.concat(filterList.stream(), predicateList.stream())
+                                    .collect(Collectors.toList());
+
+                            Mono<Route> routeMono = routeRepository.save(route);
+                            Flux<FilterAndPredicate> filterAndPredicateListMono = filterAndPredicateRepository.saveAll(filterAndPredicateList);
+                            Flux<Args> argsListMono = argsRepository.saveAll(argsList);
+
+                            return Mono.when(routeMono, filterAndPredicateListMono, argsListMono).thenReturn(route);
+                        })
+                        .switchIfEmpty(Mono.error(new IllegalArgumentException("Route not found for routeId: " + dto.getRouteId())))
+                );
+
+        return updateRouteFlux.then();
     }
 }

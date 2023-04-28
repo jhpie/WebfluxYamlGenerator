@@ -54,4 +54,12 @@ public class Route {
         dto.setMetadata(this.metadata);
         return dto;
     }
+
+    public void update(RouteDto dto) {
+        this.uri = dto.getUri();
+        this.domainId = dto.getDomainId();
+        this.metadata = dto.getMetadata();
+        this.predicates = dto.getPredicates().stream().map(FilterAndPredicate::new).toList();
+        this.filters = dto.getFilters().stream().map(FilterAndPredicate::new).toList();
+    }
 }

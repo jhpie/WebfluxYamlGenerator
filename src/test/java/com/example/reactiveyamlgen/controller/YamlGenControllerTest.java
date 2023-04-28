@@ -212,7 +212,7 @@ public class YamlGenControllerTest {
         @Test
         @DisplayName("삭제성공")
         void testDeleteYaml() {
-            Mockito.when(yamlGenService.deleteYaml()).thenReturn(Mono.empty());
+            Mockito.when(yamlGenService.deleteYamlAll()).thenReturn(Mono.empty());
 
             webTestClient.post().uri("/yaml/delete")
                     .exchange()

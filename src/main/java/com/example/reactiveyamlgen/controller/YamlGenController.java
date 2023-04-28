@@ -36,16 +36,6 @@ public class YamlGenController {
         return yamlGenService.saveYaml(routeDtos);
     }
 
-    @PostMapping(value = "/read")
-    public Mono<List<RouteDto>> read() {
-        return yamlGenService.getYaml();
-    }
-
-    @PostMapping(value = "/delete")
-    public Mono<Void> delete() {
-        return yamlGenService.deleteYaml();
-    }
-
     @PostMapping(value = "/write")
     public Mono<Void> write() throws YamlFileIoException, RouteNotFoundException {
         Flux<Tuple3<Route, FilterAndPredicate, Args>> routeFlux = yamlGenService.readYaml();
@@ -56,5 +46,24 @@ public class YamlGenController {
                 .then(Mono.fromRunnable(subscriber::clearDtos));
     }
 
+    @PostMapping(value = "/read")
+    public Mono<List<RouteDto>> read() {
+        return yamlGenService.getYaml();
+    }
+
+    @PostMapping(value = "/update")
+    public Mono<Void> update(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+        return yamlGenService.updateYaml(routeDtos);
+    }
+
+    @PostMapping(value = "/deleteAll")
+    public Mono<Void> delete() {
+        return yamlGenService.deleteYamlAll();
+    }
+
+    @PostMapping(value = "/delete")
+    public Mono<Void> deleteById(@RequestBody List<RouteIdDto> routeIdDtos) {
+        return yamlGenService.deleteYamlById(routeIdDtos);
+    }
 
 }
