@@ -35,9 +35,8 @@ public class YamlGenControllerTest {
     @MockBean
     private YamlGenService yamlGenService;
 
-
-
     ValidList<RouteDto> routeDtos;
+    List<RouteDto> routeReturn;
     List<FilterAndPredicateDto> filterDtoList;
     List<FilterAndPredicateDto> predicateDtoList;
     List<ArgsDto> filterArgsList;
@@ -51,6 +50,7 @@ public class YamlGenControllerTest {
     @BeforeEach
     public void init() {
         routeDtos = new ValidList<>();
+        routeReturn = new ArrayList<>();
         filterDtoList = new ArrayList<>();
         predicateDtoList = new ArrayList<>();
         filterArgsList = new ArrayList<>();
@@ -96,6 +96,7 @@ public class YamlGenControllerTest {
         routeDto.setMetadata("for Test ROUTE");
 
         routeDtos.add(routeDto);
+        routeReturn.add(routeDto);
     }
 
 
@@ -180,6 +181,43 @@ public class YamlGenControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("/read")
+    class Read {
+        @Test
+        @DisplayName("성공")
+        void testReadSuccess() {
+            Mockito.when(yamlGenService.getYaml()).thenReturn(Mono.just(routeReturn));
 
-}
+            webTestClient.post().uri("/yaml/read")
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBodyList(RouteDto.class)
+                    .isEqualTo(routeReturn);
+        }
+
+        @Test
+        @DisplayName("실패")
+        void testReadFailure() throws YamlFileIoException, RouteNotFoundException {
+            Mockito.when(yamlGenService.getYaml()).thenReturn(Mono.error(new RouteNotFoundException("No routes found in DB")));
+
+            webTestClient.post().uri("/yaml/read")
+                    .exchange()
+                    .expectStatus().is4xxClientError()
+                    .expectBody(String.class)
+                    .value(responseBody -> assertTrue(responseBody.contains("No routes found in DB")));
+        }
+        }
+
+        @Test
+        @DisplayName("삭제성공")
+        void testDeleteYaml() {
+            Mockito.when(yamlGenService.deleteYaml()).thenReturn(Mono.empty());
+
+            webTestClient.post().uri("/yaml/delete")
+                    .exchange()
+                    .expectStatus().isOk();
+        }
+    }
+
 
