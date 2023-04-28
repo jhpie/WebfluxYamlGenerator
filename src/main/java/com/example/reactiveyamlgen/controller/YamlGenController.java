@@ -2,6 +2,7 @@ package com.example.reactiveyamlgen.controller;
 
 import com.example.reactiveyamlgen.config.Subscriber;
 import com.example.reactiveyamlgen.dto.RouteDto;
+import com.example.reactiveyamlgen.dto.RouteIdDto;
 import com.example.reactiveyamlgen.dto.ValidList;
 import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
 import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
@@ -38,6 +39,11 @@ public class YamlGenController {
     @PostMapping(value = "/read")
     public Mono<List<RouteDto>> read() {
         return yamlGenService.getYaml();
+    }
+
+    @PostMapping(value = "/delete")
+    public Mono<Void> delete() {
+        return yamlGenService.deleteYaml();
     }
 
     @PostMapping(value = "/write")

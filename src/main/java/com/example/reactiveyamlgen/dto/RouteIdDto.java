@@ -12,6 +12,6 @@ import lombok.*;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class IdDto {
+public class RouteIdDto {
     private Long id;
 }

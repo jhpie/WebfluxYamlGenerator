@@ -1,6 +1,5 @@
 package com.example.reactiveyamlgen.service.impl;
 
-import com.example.reactiveyamlgen.config.Subscriber;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
@@ -94,6 +93,7 @@ public class YamlGenServiceImpl implements YamlGenService {
                 .doOnNext(item -> logger.info("Item: " + item.toString()))
                 .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found In DB")));
     }
+
     public Mono<List<RouteDto>> getYaml() {
         return readYaml()
                 .collectList()
@@ -150,11 +150,17 @@ public class YamlGenServiceImpl implements YamlGenService {
                 .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found in DB")));
     }
 
+    @Override
+    public Mono<Void> deleteYaml() {
+        return Mono.when(routeRepository.deleteAll(),
+                filterAndPredicateRepository.deleteAll(),
+                argsRepository.deleteAll());
+    }
+
     public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException {
         if (routeDtos.isEmpty()) {
             throw new RouteNotFoundException("No routes found In List<RouteDto>");
         }
-
 
         try {
             //파일객체 생성
