@@ -1,6 +1,7 @@
 package com.example.reactiveyamlgen.controller;
 
 import com.example.reactiveyamlgen.config.Subscriber;
+import com.example.reactiveyamlgen.dto.CustomResponseDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.RouteIdDto;
 import com.example.reactiveyamlgen.dto.ValidList;
@@ -11,6 +12,7 @@ import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
 import com.example.reactiveyamlgen.service.YamlGenService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,38 +34,68 @@ public class YamlGenController {
     }
 
     @PostMapping(value = "/create")
-    public Flux<Void> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
-        return yamlGenService.saveYaml(routeDtos);
+    public Mono<CustomResponseDto> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+        return yamlGenService.saveYaml(routeDtos)
+                .then(Mono.just(CustomResponseDto.builder().build()))
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
     @PostMapping(value = "/write")
-    public Mono<Void> write() throws YamlFileIoException, RouteNotFoundException {
+    public Mono<CustomResponseDto> write() throws YamlFileIoException, RouteNotFoundException {
         Flux<Tuple3<Route, FilterAndPredicate, Args>> routeFlux = yamlGenService.readYaml();
         Subscriber subscriber = new Subscriber();
         routeFlux.subscribe(subscriber);
         return routeFlux
                 .then(yamlGenService.writeYaml(subscriber.getRouteDtos(), subscriber.getFilterAndPredicateDtos(), subscriber.getArgsDtos()))
-                .then(Mono.fromRunnable(subscriber::clearDtos));
+                .then(Mono.fromRunnable(subscriber::clearDtos))
+                .then(Mono.just(CustomResponseDto.builder().build()))
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
     @PostMapping(value = "/read")
-    public Mono<List<RouteDto>> read() {
-        return yamlGenService.getYaml();
+    public Mono<CustomResponseDto> read() {
+        return yamlGenService.getYaml()
+                .map(routes -> CustomResponseDto.builder().responseMessage(String.valueOf(routes)).build())
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
     @PostMapping(value = "/update")
-    public Mono<Void> update(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
-        return yamlGenService.updateYaml(routeDtos);
+    public Mono<CustomResponseDto> update(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+        return yamlGenService.updateYaml(routeDtos)
+                .then(Mono.just(CustomResponseDto.builder().build()))
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
     @PostMapping(value = "/deleteAll")
-    public Mono<Void> delete() {
-        return yamlGenService.deleteYamlAll();
+    public Mono<CustomResponseDto> delete() {
+        return yamlGenService.deleteYamlAll()
+                .then(Mono.just(CustomResponseDto.builder().build()))
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
     @PostMapping(value = "/delete")
-    public Mono<Void> deleteById(@RequestBody List<RouteIdDto> routeIdDtos) {
-        return yamlGenService.deleteYamlById(routeIdDtos);
+    public Mono<CustomResponseDto> deleteById(@RequestBody List<RouteIdDto> routeIdDtos) {
+        return yamlGenService.deleteYamlById(routeIdDtos)
+                .then(Mono.just(CustomResponseDto.builder().build()))
+                .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
+                        .responseCode(HttpStatus.INTERNAL_SERVER_ERROR.toString())
+                        .responseMessage("Error message")
+                        .build()));
     }
 
 }
