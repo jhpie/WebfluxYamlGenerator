@@ -5,8 +5,8 @@ import com.example.reactiveyamlgen.dto.CustomResponseDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.RouteIdDto;
 import com.example.reactiveyamlgen.dto.ValidList;
-import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
-import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
+import com.example.reactiveyamlgen.exception.code.ErrorCode;
+import com.example.reactiveyamlgen.exception.exception.CustomException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -33,8 +33,13 @@ public class YamlGenController {
         this.yamlGenService = yamlGenService;
     }
 
+    @PostMapping(value = "/test")
+    public void test(){
+        throw new CustomException(ErrorCode.FILE_WRITE_FAIL_ERROR);
+    }
+
     @PostMapping(value = "/create")
-    public Mono<CustomResponseDto> create(@Validated @RequestBody ValidList<RouteDto> routeDtos) {
+    public Mono<CustomResponseDto> create(@Validated @RequestBody ValidList<RouteDto> routeDtos){
         return yamlGenService.saveYaml(routeDtos)
                 .then(Mono.just(CustomResponseDto.builder().build()))
                 .onErrorResume(ex -> Mono.just(CustomResponseDto.builder()
@@ -44,7 +49,7 @@ public class YamlGenController {
     }
 
     @PostMapping(value = "/write")
-    public Mono<CustomResponseDto> write() throws YamlFileIoException, RouteNotFoundException {
+    public Mono<CustomResponseDto> write(){
         Flux<Tuple3<Route, FilterAndPredicate, Args>> routeFlux = yamlGenService.readYaml();
         Subscriber subscriber = new Subscriber();
         routeFlux.subscribe(subscriber);

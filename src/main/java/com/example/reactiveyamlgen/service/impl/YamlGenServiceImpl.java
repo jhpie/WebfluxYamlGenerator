@@ -4,8 +4,7 @@ import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.RouteIdDto;
-import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
-import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
+import com.example.reactiveyamlgen.exception.exception.CustomException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -92,7 +91,7 @@ public class YamlGenServiceImpl implements YamlGenService {
                 .flatMap(routeAndFilter -> argsRepository.findAllByParentName(routeAndFilter.getT2().getName())
                         .map(args -> Tuples.of(routeAndFilter.getT1(), routeAndFilter.getT2(), args)))
                 .doOnNext(item -> logger.info("Item: " + item.toString()))
-                .switchIfEmpty(Mono.error(new RouteNotFoundException("No routes found In DB")));
+                .switchIfEmpty(Mono.error(new CustomException("No routes found In DB")));
     }
 
     public Mono<List<RouteDto>> getYaml() {
@@ -169,7 +168,7 @@ public class YamlGenServiceImpl implements YamlGenService {
     }
 
 
-    public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException {
+    public Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos){
         if (routeDtos.isEmpty()) {
             throw new RouteNotFoundException("No routes found In List<RouteDto>");
         }

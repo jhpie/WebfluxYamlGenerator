@@ -3,7 +3,8 @@ package com.example.reactiveyamlgen.config;
 import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
-import com.example.reactiveyamlgen.exception.exception.SubscriberException;
+import com.example.reactiveyamlgen.exception.code.ErrorCode;
+import com.example.reactiveyamlgen.exception.exception.CustomException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -79,8 +80,8 @@ public class Subscriber extends BaseSubscriber<Tuple3<Route, FilterAndPredicate,
     protected void hookOnError(Throwable throwable) {
         logger.error("Error occurred: " + throwable.getMessage());
         try {
-            throw new SubscriberException("An error occurred in Subscriber");
-        } catch (SubscriberException e) {
+            throw new CustomException(ErrorCode.SUBSCRIBER_ERROR);
+        } catch (CustomException e) {
             e.printStackTrace();
         }
     }

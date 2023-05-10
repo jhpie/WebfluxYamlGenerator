@@ -2,7 +2,8 @@ package com.example.reactiveyamlgen.controller;
 
 
 import com.example.reactiveyamlgen.dto.MessageDto;
-import com.example.reactiveyamlgen.exception.exception.YamlFileNotFoundException;
+import com.example.reactiveyamlgen.exception.code.ErrorCode;
+import com.example.reactiveyamlgen.exception.exception.CustomException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -11,13 +12,11 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
@@ -84,7 +83,7 @@ public class GitController {
             }
         } else {
             logger.info("result.yml file not found");
-            return Mono.error(new YamlFileNotFoundException("result.yml file not found"));
+            return Mono.error(new CustomException(ErrorCode.FILE_NOT_FOUND_ERROR));
         }
     }
 

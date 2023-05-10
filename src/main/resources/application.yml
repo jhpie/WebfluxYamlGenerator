@@ -1,6 +1,8 @@
 server:
   port: 1122
 spring:
+  main:
+    allow-bean-definition-overriding: true
   cloud:
     config:
       server:

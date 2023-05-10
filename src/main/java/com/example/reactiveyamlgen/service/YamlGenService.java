@@ -4,8 +4,6 @@ import com.example.reactiveyamlgen.dto.ArgsDto;
 import com.example.reactiveyamlgen.dto.FilterAndPredicateDto;
 import com.example.reactiveyamlgen.dto.RouteDto;
 import com.example.reactiveyamlgen.dto.RouteIdDto;
-import com.example.reactiveyamlgen.exception.exception.RouteNotFoundException;
-import com.example.reactiveyamlgen.exception.exception.YamlFileIoException;
 import com.example.reactiveyamlgen.jpa.entity.Args;
 import com.example.reactiveyamlgen.jpa.entity.FilterAndPredicate;
 import com.example.reactiveyamlgen.jpa.entity.Route;
@@ -21,6 +19,6 @@ public interface YamlGenService {
     Mono<List<RouteDto>> getYaml();
     Mono<Void> deleteYamlAll();
     Mono<Void> deleteYamlById(List<RouteIdDto> routeIdDtos);
-    Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos) throws RouteNotFoundException, YamlFileIoException;
+    Mono<Void> writeYaml(List<RouteDto> routeDtos, List<FilterAndPredicateDto> filterAndPredicateDtos, List<ArgsDto> argsDtos);
     Mono<Void> updateYaml(List<RouteDto> routeDtos);
 }
