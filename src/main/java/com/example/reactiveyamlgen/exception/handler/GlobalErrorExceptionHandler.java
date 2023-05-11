@@ -1,5 +1,8 @@
 package com.example.reactiveyamlgen.exception.handler;
 
+import com.example.reactiveyamlgen.exception.code.ErrorCode;
+import com.example.reactiveyamlgen.exception.exception.CustomErrorResponse;
+import com.example.reactiveyamlgen.exception.exception.CustomException;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
@@ -9,13 +12,16 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.*;
 import reactor.core.publisher.Mono;
 
+import java.util.Date;
 import java.util.Map;
 
-@Component
+@Component("errorWebExceptionHandler")
 @Order(-2)
 public class GlobalErrorExceptionHandler extends AbstractErrorWebExceptionHandler {
 
@@ -29,16 +35,27 @@ public class GlobalErrorExceptionHandler extends AbstractErrorWebExceptionHandle
 
     @Override
     protected RouterFunction<ServerResponse> getRoutingFunction(ErrorAttributes errorAttributes) {
-
-        return RouterFunctions.route(RequestPredicates.all(), request -> this.renderErrorResponse(request));
+        return RouterFunctions.route(RequestPredicates.all(), this::renderErrorResponse);
     }
 
-    private Mono<ServerResponse> renderErrorResponse(ServerRequest request){
-        Map<String, Object> errorProperties = getErrorAttributes(request, ErrorAttributeOptions.defaults());
+    private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
+        Throwable error = getError(request);
 
-        return ServerResponse.status(Integer.parseInt(errorProperties.get("status").toString()))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(BodyInserters.fromValue(errorProperties));
+        if (error instanceof WebExchangeBindException) {
+            throw new CustomException(ErrorCode.VALIDATION_ERROR);
+        } else {
+            Map<String, Object> errorProperties = getErrorAttributes(request, ErrorAttributeOptions.defaults());
+            CustomErrorResponse response = new CustomErrorResponse();
+            response.setPath((String) errorProperties.get("path"));
+            response.setError((String) errorProperties.get("error"));
+            response.setException(error.getClass().getSimpleName());
+            response.setMessage((String) errorProperties.get("message"));
+            response.setErrorCode("err");
+            return ServerResponse.status(Integer.parseInt(errorProperties.get("status").toString()))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(BodyInserters.fromValue(response));
+        }
     }
+
 
 }
