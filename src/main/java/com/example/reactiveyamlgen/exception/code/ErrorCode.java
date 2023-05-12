@@ -1,6 +1,5 @@
 package com.example.reactiveyamlgen.exception.code;
 
-import com.example.reactiveyamlgen.dto.RouteDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)

@@ -10,7 +10,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomErrorResponse {
+public class CustomErrorResponseDto {
     private String path;
     private String error;
     private String exception;

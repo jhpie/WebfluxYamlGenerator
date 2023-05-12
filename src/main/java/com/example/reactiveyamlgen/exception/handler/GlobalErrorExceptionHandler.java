@@ -1,8 +1,7 @@
 package com.example.reactiveyamlgen.exception.handler;
 
 import com.example.reactiveyamlgen.exception.code.ErrorCode;
-import com.example.reactiveyamlgen.exception.exception.CustomErrorResponse;
-import com.example.reactiveyamlgen.exception.exception.CustomException;
+import com.example.reactiveyamlgen.exception.exception.CustomErrorResponseDto;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
@@ -13,12 +12,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.*;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Component("errorWebExceptionHandler")
@@ -42,10 +43,27 @@ public class GlobalErrorExceptionHandler extends AbstractErrorWebExceptionHandle
         Throwable error = getError(request);
 
         if (error instanceof WebExchangeBindException) {
-            throw new CustomException(ErrorCode.VALIDATION_ERROR);
+            WebExchangeBindException bindException = (WebExchangeBindException) error;
+            BindingResult bindingResult = bindException.getBindingResult();
+            List<ObjectError> allErrors = bindingResult.getAllErrors();
+            List<String> errorMessages = new ArrayList<>();
+            for (ObjectError objectError : allErrors) {
+                errorMessages.add(objectError.getDefaultMessage());
+            }
+
+            CustomErrorResponseDto response = new CustomErrorResponseDto();
+            response.setPath(request.path());
+            response.setError(String.valueOf(errorMessages));
+            response.setException(error.getClass().getSimpleName());
+            response.setMessage(ErrorCode.VALIDATION_ERROR.getMessage());
+            response.setErrorCode(ErrorCode.VALIDATION_ERROR.getCode());
+
+            return ServerResponse.status(((WebExchangeBindException) error).getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(BodyInserters.fromValue(response));
         } else {
             Map<String, Object> errorProperties = getErrorAttributes(request, ErrorAttributeOptions.defaults());
-            CustomErrorResponse response = new CustomErrorResponse();
+            CustomErrorResponseDto response = new CustomErrorResponseDto();
             response.setPath((String) errorProperties.get("path"));
             response.setError((String) errorProperties.get("error"));
             response.setException(error.getClass().getSimpleName());
