@@ -43,17 +43,20 @@ public class GlobalErrorExceptionHandler extends AbstractErrorWebExceptionHandle
         Throwable error = getError(request);
 
         if (error instanceof WebExchangeBindException) {
+            Map<String, Object> errorProperties = getErrorAttributes(request, ErrorAttributeOptions.defaults());
             WebExchangeBindException bindException = (WebExchangeBindException) error;
             BindingResult bindingResult = bindException.getBindingResult();
             List<ObjectError> allErrors = bindingResult.getAllErrors();
             List<String> errorMessages = new ArrayList<>();
+            StringBuilder result = new StringBuilder();
             for (ObjectError objectError : allErrors) {
                 errorMessages.add(objectError.getDefaultMessage());
+                result.append(objectError.getDefaultMessage()+"\n");
             }
-
+            System.out.println(result);
             CustomErrorResponseDto response = new CustomErrorResponseDto();
             response.setPath(request.path());
-            response.setError(String.valueOf(errorMessages));
+            response.setError(String.valueOf(result));
             response.setException(error.getClass().getSimpleName());
             response.setMessage(ErrorCode.VALIDATION_ERROR.getMessage());
             response.setErrorCode(ErrorCode.VALIDATION_ERROR.getCode());
@@ -68,7 +71,7 @@ public class GlobalErrorExceptionHandler extends AbstractErrorWebExceptionHandle
             response.setError((String) errorProperties.get("error"));
             response.setException(error.getClass().getSimpleName());
             response.setMessage((String) errorProperties.get("message"));
-            response.setErrorCode("err");
+            response.setErrorCode((String) errorProperties.get("errorCode"));
             return ServerResponse.status(Integer.parseInt(errorProperties.get("status").toString()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(response));
